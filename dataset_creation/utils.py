@@ -1,9 +1,5 @@
-from collections import Counter
 import csv
 import subprocess
-import inflect
-
-infl_eng = inflect.engine()
 
 def read(fname):
 	p = subprocess.Popen(['gunzip', '-c', fname], stdout=subprocess.PIPE)
