@@ -5,7 +5,7 @@
 
 The `dataset_creation` directory contains the code for creating a modified-English agreement dataset. To run the code, download the lemmatized and parsed Wikipedia corpus and locate it in the same directory.
 
-The arguments specified in `main.py` allow controlling for various parameters, such as with which arguments the verb agrees, whether NP's are marked for nuclear cases, which case system to use, what would be the verb-subject-object order, etc:
+The arguments specified in `main.py` allow controlling for various parameters, such as with which arguments the verb agrees, whether NPs are marked for nuclear cases, which case system to use, what would be the verb-subject-object order, etc:
 
 ```python
 	#agreement_marker = agreement_markers.NominativeAcusativeMarker(add_cases = False)
