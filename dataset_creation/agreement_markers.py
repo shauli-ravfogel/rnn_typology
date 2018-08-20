@@ -1,9 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
 """
 An abstract class that adds agreement and case marks to sentence elements (verbs and their arguments).
+
+Case system:
+
+						SG			PL
+	
+	SUBJECT/ERGATIVE			§			©
+	
+	OBJECT/ABSOLUTIVE			#			*
+	
+	INDIRECT OBJECT / DATIVE		@			&
 """
 
 class AgreementMarker(object):
@@ -22,55 +31,24 @@ class AgreementMarker(object):
 	def mark(self, verb_node, agreement_nodes):
 	
 		cases = []
-		
 		is_transitive = any((n.label == "dobj" for n in agreement_nodes))
-		
-		# collect cases for verb arguments.
+		verb_suffix = ""
 		
 		for agreement_node in agreement_nodes:
 		
 			case = self.get_case(verb_node, agreement_node, is_transitive)
-			cases.append(case)
+
+			verb_suffix += case
 			
 			if self.add_cases:
 				
-				# add case marking on NPs
-				
-				if agreement_node.word != agreement_node.pos:
-					agreement_node.word = agreement_node.lemma.lower()
-					
-				agreement_node.word += "!"
-				agreement_node.word += case
-				
+				cases.append((agreement_node, case))
+
 		
-		# add verb agreement
-		
-		verb_and_children = verb_node.children[:]
-		verb_and_children.append(verb_node)
-		
-		# lemmatize verb
-		
-		for v in verb_and_children:
-		
-			if not v.is_verb: continue
-			
-			if v.word in ["was", "were"]:
-			
-				v.word = "was"
-				
-			if v.lemma == "have":
-				
-				v.word = "have"
-		
-		if (verb_node.pos == "VBZ" or verb_node.pos == "VBP"):
-			
-			verb_node.word = verb_node.lemma
-			
-		verb_node.word += "!"
-		
-		for case in sorted(cases):
-			
-			verb_node.word += case
+		verb_suffix = " ".join(sorted(verb_suffix))
+		cases.append((verb_node, verb_suffix))
+
+		return cases
 			
 	def get_case(self, verb_node, agreement_node, is_transitive):
 	

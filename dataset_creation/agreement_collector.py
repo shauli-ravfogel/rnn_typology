@@ -64,7 +64,6 @@ class Node(object):
 	 
 	 	pass
 		
-	
 	def size(self):
 	
 		"""
@@ -78,9 +77,10 @@ class Node(object):
 		
 		return sum(children_size) + 1
 		
-	def get_index(self): return self.tok_id
+	def get_index(self): 
+	
+		return self.tok_id
 
-		
 	def dfs(self, order = None):
 	
 		"""
@@ -151,8 +151,7 @@ class Node(object):
 				
 		tree_structure.append(")")
 
-		return path, tree_structure
-				
+		return path, tree_structure			
 		
 	def add_children(self, children, edges, tree):
 	
@@ -179,13 +178,11 @@ class Node(object):
 			child.add_children(edges[tok_id], edges, tree)
 			child.add_parent(self)
 			
-		
 	def add_parent(self, node):
 
 		self.parent = node
 		self.parent_index = node.tok_id
-			
-
+		
 	def set_number(self):
 	
 		"""
@@ -196,8 +193,6 @@ class Node(object):
 		
 		word = word.lower()
 		num = ""
-		
-		#print word, pos, self.root
 		
 		if not (pos in  ["NN", "NNP", "NNS", "NNPS", "PRP"] or word in ["this", "that", "these", "those", "which", "who"]):
 			self.number = None
@@ -242,21 +237,16 @@ class Node(object):
 		
 		self.number = num
 
-	
 	def collect_arguemnts(self, agreement_dict, agreements_to_collect):
-
 
 		if self.is_verb:
 		
-			
 			nuclear_children = (c for c in self.children if c.label in agreements_to_collect and c.pos in ["NN", "NNP", "NNS", "NNPS", "PRP", "WDT", "WP", "DT"])
 			
 			for c in nuclear_children:
 				
-				if c.pos=="WDT" or c.pos=="WP" and self.label!="rcmod":
+				if (c.pos=="WDT" or c.pos=="WP") and self.label!="rcmod":
 					return {}
-				
-				if c.number is None: return {}
 					
 				agreement_dict[self.get_index()].append(c)
 
@@ -269,7 +259,38 @@ class Node(object):
 
 class AgreementCollector(object):
 
-	def __init__(self, skip = 5, fname = "wiki.parsed.subset.50.lemmas.zip", order = "svo", agreement_marker = None, agreements = {}, most_common = 10000):
+	def __init__(self, skip = 5, fname = "wiki.parsed.subset.50.lemmas.zip", order = None, agreement_marker = None, agreements = {}, most_common = 10000, mark_verb = True):
+	
+		"""
+		
+		Collect agreement instances and save them in deps.csv.
+		
+		:param skip:
+			number of sentences to skip after reading each sentence.
+		
+		:param fname:
+			a file containing lemmatized dependency trees (CoNLL format).
+			
+		:param order:
+			a string, indicating subject-object-verb order, e.g. sov, vos, osv. 
+			trees will be reordered to achieve the desired order. if None, no reordering takes place.
+		
+		:param agreemment_marker:
+			an object that adds case suffixes to arguments according to a specific alignment scheme, e.g.
+			ergative-absolutive or nominative-acusative.
+		
+		:param agreements:
+		
+			a dictionary, specifying which agreements to collect, namely with which argument the verb 				agrees. e.g., if agreements = {"nsubj": True, "dobj": True, "iobj": False}, only the subject 				and object would be marked for case, and verb forms would vary according to subject and object 				number (but not according to indirect object number).
+		
+		:param most_common:
+			vocabulary size. If most_common=n, Words not among the n most frequent words would be replaced 				by their POS tags.
+			
+		:param mark_verb:
+		
+			if true, verb form varies according to the number of its argument. If false, verb form does not vary (e.g. "the men *is* here")
+			  
+		"""
 	
 		self.skip = skip
 		self.fname =  fname
@@ -278,10 +299,15 @@ class AgreementCollector(object):
 		self.agreements = agreements
 		self.most_common = most_common
 		self._load_freq_dict()
+		self.mark_verb = mark_verb
 		
-		if isinstance(agreement_marker, agreement_markers.ErgativeAbsolutiveMarker) and not agreements['dobj']:
-			
-			raise Exception("Ergative-absolutive implies verb-obj agreement")
+		if not any(agreements.values()):
+		
+			raise Exception("Expecting at least one verb-argument agreement to collect.")
+		
+		if self.order is not None and self.order not in ["svo", "sov", "vso", "vos", "osv", "ovs"]:
+		
+			raise Exception("Unrecognized order order.")
 	
 	def _load_freq_dict(self):
 	
@@ -325,12 +351,14 @@ class AgreementCollector(object):
 			
 			tree[tok_id] = node
 			edges[parent].append(tok_id)
-		
-		for node in tree.values():
-			node.set_number()
+	
 			
 		root_children = edges[root.tok_id]
 		root.add_children(root_children, edges, tree)
+		
+		for node in tree.values():
+		
+			node.set_number()
 		
 		return tree
 	
@@ -343,16 +371,64 @@ class AgreementCollector(object):
 		
 		
 		return dfs_ordered_nodes[node1_index + 1 :node2_index]
+	
+	def _add_cases(self, nodes_and_cases):
+	
+		"""
+		add case suffixes to the words represented by the verb node and its argument nodes.
 		
+		:param nodes_and_cases:
 		
-	def _get_tree_and_deps(self, sent):
+			a list of tuples (node, suffix), containing a verb node and its argument nodes.
+			this list is the output of the agreement marker.
+		"""
+		
+		for (node, suffix) in nodes_and_cases:
+			
+			if not node.is_verb:
+			
+				
+				if not node.word == node.pos: # if not rare word
+				
+					node.word = node.lemma.lower()
+				
+			else:
+				verb_and_children = node.children[:]
+				verb_and_children.append(node)
+				
+				# lemmatize the verb and its auxiliaries (to eliminate redundancy in the case marking). 				present tense verbs are converted to their base form, auxiliaries to their singular form 	 
+				for n in verb_and_children:
+				
+					if not n.is_verb: continue
+					
+					if node.word == node.pos: continue
+			
+					if n.word in ["was", "were"]:
+			
+						n.word = "was"
+				
+					elif n.lemma == "have":
+				
+						n.word = "have"
+					
+					elif n.word in ["is", "are"]:
+						
+						n.word = "is"
+						
+					elif (n.pos == "VBZ" or n.pos == "VBP"):
+					
+						n.word = n.lemma
+					
+			if not node.is_verb or self.mark_verb:
+			
+				node.word += "!" + suffix		
+		
+	def _get_deps(self, sent):
 	
 		tree = self._sent_to_tree(sent)
 		root = tree['root']
 		
-		
 		for n in tree.values():
-			
 			
 			n.word = n.word.lower()
 	
@@ -367,7 +443,6 @@ class AgreementCollector(object):
 		
 		nodes_dfs, tree_structure = root.dfs(self.order)
 		
-		
 		depths = []
 		pos_tags = []
 		lemmas = []
@@ -380,7 +455,6 @@ class AgreementCollector(object):
 			lemmas.append(n.lemma)
 			labels.append(n.label)
 			
-		
 		is_rcmod = lambda node: node.label=="rcmod"
 		is_subj = lambda node: node.label =="nsubj"
 		deps = defaultdict(dict)
@@ -392,7 +466,9 @@ class AgreementCollector(object):
 			verb_index = nodes_dfs.index(verb_node)
 			
 			if self.agreement_marker:
-					self.agreement_marker.mark(verb_node, verb_arguments)
+					
+					nodes_and_cases = self.agreement_marker.mark(verb_node, verb_arguments)
+					self._add_cases(nodes_and_cases)
 							
 			for argument_node in verb_arguments:
 				
@@ -413,7 +489,7 @@ class AgreementCollector(object):
 		deps = {k:v for (k,v) in deps.iteritems() if "nsubj" in v or "nsubjpass" in v}
 	
 		words = [n.word for n in nodes_dfs]
-		sent_info = (words,lemmas, pos_tags, depths, labels)
+		sent_info = (words, lemmas, pos_tags, depths, labels)
 		
 		return sent_info, deps
 
@@ -427,14 +503,14 @@ class AgreementCollector(object):
 		
 		for i, sent in enumerate(tokenize(read(self.fname))):
 			
-			if i % self.skip != 0 and i > 0: continue
+			if i % self.skip != 0: continue
 			
 			if i % 100000 == 0 and i > 0:
 				print time.time() - t
 				t = time.time()
 				print i
 				
-			sent_info, deps = self._get_tree_and_deps(sent)
+			sent_info, deps = self._get_deps(sent)
 			words,lemmas, pos_tags, depths, labels = sent_info
 			
 			if not deps: continue
@@ -463,14 +539,6 @@ class AgreementCollector(object):
 					sent_dict[l + "_" + prop] = val
 			
 			sents.append(sent_dict)
-			
-			if "a gimbal" in sent_dict["sent_words"]:
-			
-				for tok in sent:
-					print "\t".join(tok)
-				print sent_dict["sent_words"]
-				print sent_dict["original_sent"]
-				exit()
 					
 			if i % 1000 == 0:
 			
