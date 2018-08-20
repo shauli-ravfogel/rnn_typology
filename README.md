@@ -18,4 +18,4 @@ The arguments specified in `main.py` allow controlling for various parameters, s
 	collector.collect_agreement()
 ```
 
-Running `main.py` would generate a file named `deps.csv`, that contains instances of modified sentences that present the desired grammatical phenomena. 
+Running `main.py` would generate a file named `deps.csv`, that contains instances of modified sentences exhibiting the desired grammatical phenomena. 
