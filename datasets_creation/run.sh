@@ -1,6 +1,6 @@
 #!/bin/bash
 
-dataset="dev"
+dataset="test"
 agreement_marker="na-d"
 add_cases=0
 order="vos"

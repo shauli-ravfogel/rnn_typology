@@ -306,37 +306,6 @@ class AgreementCollector(object):
 
 	def __init__(self, mode="train", skip = 1, fname=None, order = None, agreement_marker = None, agreements = {}, argument_types = None, verbs = None, most_common=200000, mark_verb = True, replace_uncommon = False, add_gender = True, filter_no_att=False,  filter_att=False, filter_obj=False , filter_no_obj=False, filter_obj_att=False, filter_no_obj_att=False):
 	
-		"""
-		
-		Collect agreement instances and save them in deps.csv.
-		
-		:param skip:
-			number of sentences to skip after reading each sentence.
-		
-		:param fname:
-			a file containing lemmatized dependency trees (CoNLL format).
-			
-		:param order:
-			a string, indicating subject-object-verb order, e.g. sov, vos, osv. 
-			trees will be reordered to achieve the desired order. if None, no reordering takes place.
-		
-		:param agreemment_marker:
-			an object that adds case suffixes to arguments according to a specific alignment scheme, e.g.
-			ergative-absolutive or nominative-acusative.
-		
-		:param agreements:
-		
-			a dictionary, specifying which agreements to collect, namely with which argument the verb 				agrees. e.g., if agreements = {"nsubj": True, "dobj": True, "iobj": False}, only the subject 				and object would be marked for case, and verb forms would vary according to subject and object 				number (but not according to indirect object number).
-		
-		:param most_common:
-			vocabulary size. If most_common=n, Words not among the n most frequent words would be replaced 				by their POS tags.
-			
-		:param mark_verb:
-		
-			if true, verb form varies according to the number of its argument. If false, verb form does not vary (e.g. "the men *is* here")
-			  
-		"""
-	
 		self.skip = skip
 		self.fname = fname
 		self.order = order
@@ -415,7 +384,6 @@ class AgreementCollector(object):
 
 					if node.word in ["is", "are", "'s", "'re", "was", "were"]:
 						c.parent = node
-						#print "parent of word ", c.word, " is now ", node.word
 						node.children.append(c)
 						parent.children.remove(c)
 					else:
@@ -522,7 +490,6 @@ class AgreementCollector(object):
 						n.word = "have"
 					
 					elif n.word in ["is", "are"]:
-						#print "yay"
 						n.word = "is"
 			
 					elif (n.pos == "VBZ" or n.pos == "VBP") and not n.lemmatized:
@@ -653,8 +620,6 @@ class AgreementCollector(object):
 			words = " ".join([tok[WORD] for tok in sent])
 			labels = " ".join([tok[LABEL] for tok in sent])
 			
-			if len(words.split(" ")) > 15: continue
-			
 			has_iobj = "iobj" in labels
 			if has_iobj: count_iobj += 1
 			if sent == []: continue
@@ -731,7 +696,7 @@ class AgreementCollector(object):
 					
 				batches += 1
 	
-		print "Done. Dataset saved in {}".format("deps_" + self.mode + ".csv")
+		print "Done. Dataset saved in the datasets directory under  {}".format("deps_" + self.mode + ".csv")
 			
 			
 		
