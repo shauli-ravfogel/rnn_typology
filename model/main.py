@@ -3,7 +3,7 @@ import time
 
 from utils import *
 from encoder import *
-from rnn_acceptor import *
+from rnn import *
 from data_generator import *
 from get_datasets import *
 import dynet as dy
