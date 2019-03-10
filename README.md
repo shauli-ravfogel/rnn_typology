@@ -1,4 +1,4 @@
-# RNNs and typology
+# RNNs and syntactic variability
 
 This repository contains the code for the creation of synthetic langauges used in the paper "Studying the inductive biases of RNNs
 with synthetic variations of natural languages" (accepated paper in NAACL 2019).
