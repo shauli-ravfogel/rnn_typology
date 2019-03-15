@@ -19,7 +19,7 @@ POS = 4
 PARENT_INDEX = -4
 LABEL = -3
 PARENT = -1
-PRINT = False
+PRINT = True
 
 """
 This classs represents a node in a dependency parse tree. It offers methods for traversing the subtree rooted in the node in a specific order, finding the number of a NP node and collecting verb arguments.
@@ -506,8 +506,8 @@ class AgreementCollector(object):
 		tree = self._sent_to_tree(sent)
 		root = tree['root']
 		#print "===================================="
-		if PRINT:
-			print root
+		#if PRINT:
+		#	print root
 
 		for n in tree.values():
 			
@@ -660,7 +660,7 @@ class AgreementCollector(object):
 				continue
 			if self.filter_att and sent_dict["nsubj_number_attractors"]!="0":
 				continue
-			if self.filter_obj and sent_dict["dobj_number"] != "-":
+			if self.filter_obj and "dobj" in sent_dict["sent_labels"]:
 				continue
 			if self.filter_no_obj and sent_dict["dobj_number"] == "-":
 				continue
