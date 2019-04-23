@@ -1,7 +1,7 @@
 # RNNs and syntactic variability
 
 This repository contains the code for the creation of the synthetic langauges used in the paper "[Studying the inductive biases of RNNs
-with synthetic variations of natural languages](https://arxiv.org/abs/1903.06400)" (accepated paper in NAACL 2019).
+with synthetic variations of natural languages](https://arxiv.org/abs/1903.06400)" (accepted paper in NAACL 2019).
 
 ### Dataset Creation
 
